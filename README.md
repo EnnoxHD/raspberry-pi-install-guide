@@ -194,3 +194,23 @@ LABEL archlinux
   MENU LABEL ArchLinux (over Internet, iPXE)
   KERNEL /archlinux-installer/bios/ipxe.lkrn
 ```
+
+## Funktion: Samba-Share
+> **Quelle: https://raspberrypihq.com/how-to-share-a-folder-with-a-windows-computer-from-a-raspberry-pi/**
+
+```bash
+sudo apt-get install samba samba-common-bin
+sudo nano /etc/samba/smb.conf
+```
+Share einrichten:
+```text
+[pxe]
+ comment=PXE-Server Quellen
+ path=/mnt/usb/pxe
+ browseable=yes
+ writeable=yes
+ only guest=no
+ create mask=0777
+ directory mask=0777
+ public=yes
+```
