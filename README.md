@@ -138,3 +138,16 @@ domain-needed
 bogus-priv
 dhcp-range=192.168.10.100,192.168.10.199,12h
 ```
+
+## Festplatte einbinden
+```bash
+sudo apt-get install ntfs-3g
+sudo fdisk -l
+sudo ls -l /dev/disk/by-uuid
+sudo mkdir -p /mnt/usb
+sudo nano /etc/fstab
+```
+Hinzufügen:
+```text
+UUID=<UUID> /mnt/usb ntfs-3g uid=pi,gid=pi 0 0
+```
