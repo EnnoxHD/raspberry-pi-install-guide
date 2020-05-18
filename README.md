@@ -168,16 +168,22 @@ tftp-root=/mnt/usb/pxe
 ```
 - Download von `pxelinux.0` über https://www.debian.org/distrib/netinst#netboot
 - Download von `ipxe.lkrn` für ArchLinux über https://www.archlinux.org/releng/netboot/
+- Download von `archlinux.iso` über https://www.archlinux.org/download/
 ```bash
 cd /mnt/usb/pxe
 curl -O http://ftp.nl.debian.org/debian/dists/buster/main/installer-amd64/current/images/netboot/pxelinux.0
 sudo cp /usr/lib/syslinux/modules/bios/ldlinux.c32 ./
 sudo cp /usr/lib/syslinux/modules/bios/libutil.c32 ./
 sudo cp /usr/lib/syslinux/modules/bios/menu.c32 ./
+sudo cp /usr/lib/syslinux/memdisk ./
 mkdir -p ./archlinux-installer/bios/
+mkdir -p ./archlinux-installer/iso/
 cd ./archlinux-installer/bios/
 curl -O https://www.archlinux.org/static/netboot/ipxe.419cd003a298.lkrn
 mv ipxe.419cd003a298.lkrn ipxe.lkrn
+cd ../iso
+curl -O https://mirror.netcologne.de/archlinux/iso/2020.05.01/archlinux-2020.05.01-x86_64.iso
+mv archlinux-2020.05.01-x86_64.iso archlinux.iso
 cd ../..
 sudo mkdir -p ./pxelinux.cfg
 sudo nano ./pxelinux.cfg/default
@@ -193,6 +199,11 @@ MENU TITLE PXE Boot Menu
 LABEL archlinux
   MENU LABEL ArchLinux (over Internet, iPXE)
   KERNEL /archlinux-installer/bios/ipxe.lkrn
+
+LABEL archlinux-iso
+  MENU LABEL ArchLinux (local, ISO)
+  KERNEL /memdisk
+  APPEND iso initrd=/archlinux-installer/iso/archlinux.iso raw
 ```
 
 ## Funktion: Samba-Share
