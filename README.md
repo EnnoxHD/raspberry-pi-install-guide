@@ -151,3 +151,46 @@ Hinzufügen:
 ```text
 UUID=<UUID> /mnt/usb ntfs-3g uid=pi,gid=pi 0 0
 ```
+
+## Funktion: PXE-Server
+> **Quelle: https://www.youtube.com/watch?v=EVtBHgPHf30**
+
+```bash
+sudo apt-get install syslinux-common
+sudo nano /etc/dnsmasq.conf
+```
+Anfügen:
+```text
+dhcp-boot=pxelinux.0,192.168.10.10
+pxe-service=x86PC,"PXE Boot",pxelinux,192.168.10.10
+enable-tftp
+tftp-root=/mnt/usb/pxe
+```
+- Download von `pxelinux.0` über https://www.debian.org/distrib/netinst#netboot
+- Download von `ipxe.lkrn` für ArchLinux über https://www.archlinux.org/releng/netboot/
+```bash
+cd /mnt/usb/pxe
+curl -O http://ftp.nl.debian.org/debian/dists/buster/main/installer-amd64/current/images/netboot/pxelinux.0
+sudo cp /usr/lib/syslinux/modules/bios/ldlinux.c32 ./
+sudo cp /usr/lib/syslinux/modules/bios/libutil.c32 ./
+sudo cp /usr/lib/syslinux/modules/bios/menu.c32 ./
+mkdir -p ./archlinux-installer/bios/
+cd ./archlinux-installer/bios/
+curl -O https://www.archlinux.org/static/netboot/ipxe.419cd003a298.lkrn
+mv ipxe.419cd003a298.lkrn ipxe.lkrn
+cd ../..
+sudo mkdir -p ./pxelinux.cfg
+sudo nano ./pxelinux.cfg/default
+```
+```text
+DEFAULT menu.c32
+ALLOWOPTIONS 0
+PROMPT 0
+TIMEOUT 0
+
+MENU TITLE PXE Boot Menu
+
+LABEL archlinux
+  MENU LABEL ArchLinux (over Internet, iPXE)
+  KERNEL /archlinux-installer/bios/ipxe.lkrn
+```
