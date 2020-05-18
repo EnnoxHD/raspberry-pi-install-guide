@@ -64,10 +64,20 @@ sudo apt-get --with-new-pkgs upgrade
 ## Funktion: "WLAN-to-LAN"-Bridge mit eigenem Subnetz
 Änderungen entfernen:
 ```bash
+sudo nano /etc/network/interfaces
+```
+WLAN über dhcpcd.conf:
+```bash
 sudo nano /etc/dhcpcd.conf
 ```
+```text
+interface wlan0
+static ip_address=<IP-Adresse>/<Netmask Bits>
+static routers=<Router IP>
+static domain_name_servers=<DNS Server A> <DNS Server B>
+```
 
-> **Quelle: https://willhaley.com/blog/raspberry-pi-wifi-ethernet-bridge/**
+> **Quelle: https://willhaley.com/blog/raspberry-pi-wifi-ethernet-bridge/** für Folgendes
 
 ```bash
 sudo apt-get install dnsmasq
