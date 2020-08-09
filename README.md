@@ -193,18 +193,18 @@ DEFAULT menu.c32
 ALLOWOPTIONS 0
 PROMPT 0
 TIMEOUT 0
-
 MENU TITLE PXE Boot Menu
-
 LABEL archlinux
   MENU LABEL ArchLinux (over Internet, iPXE)
   KERNEL /archlinux-installer/bios/ipxe.lkrn
-
 LABEL archlinux-iso
   MENU LABEL ArchLinux (local, ISO)
   KERNEL /memdisk
   APPEND iso initrd=/archlinux-installer/iso/archlinux.iso raw
 ```
+
+### PXE für Windows
+> **Quelle: https://www.centlinux.com/2018/11/configure-centos-7-pxe-server-install-windows-10.html**
 
 ## Funktion: Samba-Share
 > **Quelle: https://raspberrypihq.com/how-to-share-a-folder-with-a-windows-computer-from-a-raspberry-pi/**
