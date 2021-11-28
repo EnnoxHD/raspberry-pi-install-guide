@@ -1,227 +1,86 @@
-# Raspberry Pi Installation
-## SSH + Static IP
-```bash
-lsblk # nachfolgend X
-mount /dev/sdX2 /mnt
-mount /dev/sdX1 /mnt/boot
-sudo nano /mnt/boot/ssh
-umount /dev/sdX1
-sudo nano /mnt/etc/dhcpcd.conf
-umount /dev/sdX2
-```
-
-## Logindaten
-| Eigenschaft     | Wert        |
-| --------------- | ----------- |
-| **user**        | `pi`        |
-| **password**    | `raspberry` |
-
-Passwort ändern:
-```bash
-sudo passwd pi
-<Passwort>
-<Passwort bestätigen>
-```
-
-## WLAN
-```bash
-sudo nano /etc/network/interfaces
-```
+# Raspberry Pi
+## Initial setup
+1. [Download](https://www.raspberrypi.com/software/operating-systems/) the `Raspberry Pi OS Lite` image
+2. Insert SD card into PC
+3. Use [Etcher](https://www.balena.io/etcher/) to [apply image](https://www.balena.io/etcher/#faq) to SD card
+4. (Auto-)mount the partitions
+5. Create an empty file `/boot/ssh` for SSH functionality at first start
+6. Set a static IP in `/rootfs/etc/dhcpcd.conf` with:
 ```text
-auto wlan0
-allow-hotplug wlan0
-iface wlan0 inet manual
-wpa-roam /etc/wpa_supplicant/wpa_supplicant.conf
+# ...
+# Example static IP configuration:
+interface eth0
+static ip_address=192.168.10.10/24
+# ...
 ```
-```bash
-sudo nano /etc/wpa_supplicant/wpa_supplicant.conf
-```
-```text
-network={
-  ssid="<WLAN SSID>"
-  proto=RSN
-  key_mgmt=WPA-PSK
-  pairwise=CCMP TKIP
-  group=CCMP TKIP
-  psk="<WLAN Passwort>"
-}
-```
+7. Umount the partitions
+8. Insert SD card into Raspberry Pi
+9. Power the Rasperry Pi on
+10. Wait a while
+11. Configure a static IP on the PC Lan interface with
+    an IP of `192.168.10.20` and a `255.255.255.0` subnet
+12. Connect a Cross-Over-Cable / Switch between the PC and Raspberry Pi
+13. Check if a connection is established (if not: restart the PC LAN interface)
+14. Open Terminal on PC and SSH into the Raspberry Pi with `ssh pi@192.168.10.10`
+15. On the first time allow establishing a ssh connection and type `yes`
+16. Login as the user `pi` with the default password `raspberry`
+17. Permanently enable the SSH server via `sudo raspi-config` then `3 Interface Options > P2 SSH > YES > OK > Finish > No`
+18. Shutdown the Raspberry Pi `sudo poweroff`
 
-## Optional: WLAN Powermanagement aus
-```bash
-sudo nano /etc/modprobe.d/8192cu.conf
-```
-```text
-options 8192cu rtw_power_mgnt=0 rtw_enusbss=0 rtw_ips_mode=1
-```
+## Change password
+1. Connect to the Raspberry Pi
+2. Change the password via `sudo passwd pi`
+3. Type the new password and then retype again
+4. The password is now changed
+5. Shutdown the Raspberry Pi
 
-## Softwareupdate
-```bash
-sudo apt-get update
-sudo apt-get --with-new-pkgs upgrade
-```
+## Enable Wi-Fi connection
+1. Connect to the Raspberry Pi
+2. Set the Wi-Fi country via `sudo raspi-config` then `5 Localisation Options > L4 WLAN Country`
+3. Choose the country you are in e.g. `DE Germany > OK > OK`
+4. Setup Wi-Fi connection (also via `sudo raspi-config`) `1 System Options > S1 Wireless LAN`
+5. Enter your Wi-Fi name (`SSID > OK`)
+6. Enter the `passphrase` for your Wi-Fi then `OK > Finish > No`
+7. Shutdown the Raspberry Pi
 
-## Funktion: "WLAN-to-LAN"-Bridge mit eigenem Subnetz
-Änderungen entfernen:
-```bash
-sudo nano /etc/network/interfaces
-```
-WLAN über dhcpcd.conf:
-```bash
-sudo nano /etc/dhcpcd.conf
-```
-```text
-interface wlan0
-static ip_address=<IP-Adresse>/<Netmask Bits>
-static routers=<Router IP>
-static domain_name_servers=<DNS Server A> <DNS Server B>
-```
+## Update the software
+1. Connect to the Raspberry Pi
+2. Update the package list via `sudo apt update`
+3. Upgrade the packages and any dependency changes via `sudo apt full-upgrade` then `Y`
+4. Shutdown the Raspberry Pi
 
-> **Quelle: https://willhaley.com/blog/raspberry-pi-wifi-ethernet-bridge/** für Folgendes
-
-```bash
-sudo apt-get install dnsmasq
-sudo mkdir -p /etc/iptables
-sudo nano /etc/iptables/rules.v4
-```
-```text
-*nat
-:PREROUTING ACCEPT [0:0]
-:INPUT ACCEPT [0:0]
-:OUTPUT ACCEPT [0:0]
-:POSTROUTING ACCEPT [0:0]
--A POSTROUTING -o wlan0 -j MASQUERADE
-COMMIT
-
-*filter
-:INPUT ACCEPT [0:0]
-:FORWARD ACCEPT [0:0]
-:OUTPUT ACCEPT [0:0]
--A FORWARD -i wlan0 -o eth0 -m state --state RELATED,ESTABLISHED -j ACCEPT
--A FORWARD -i eth0 -o wlan0 -j ACCEPT
-COMMIT
-```
-```bash
-sudo nano /etc/network/if-up.d/iptables
-```
-```text
-#!/bin/sh
-iptables-restore < /etc/iptables/rules.v4
-```
-```bash
-sudo chmod +x /etc/network/if-up.d/iptables
-sudo nano /etc/sysctl.conf
-```
-Zeile ändern:
-```text
-net.ipv4.ip_forward=1
-```
-```bash
-sudo nano /etc/network/interfaces.d/eth0
-```
-```text
-auto eth0
-allow-hotplug eth0
-iface eth0 inet static
-  address 192.168.10.10
-  netmask 255.255.255.0
-  gateway 192.168.10.10
-```
-```bash
-sudo nano /etc/dnsmasq.d/bridge.conf
-```
+## Install DHCP server
+1. Connect to the Raspberry Pi
+2. Update the package list via `sudo apt update`
+3. Install `sudo apt install dnsmasq` then `Y`
+4. Configure the DHCP server in `/etc/dnsmasq.d/bridge.conf` with:
 ```text
 interface=eth0
-bind-interfaces
-server=1.1.1.1
 domain-needed
 bogus-priv
-dhcp-range=192.168.10.100,192.168.10.199,12h
+dhcp-range=192.168.10.100,192.168.10.199,255.255.255.0,12h
 ```
+5. Shutdown the Raspberry Pi
+6. Configure DHCP on the PC Lan interface
+7. Start the raspberry
+8. Prove that DHCP works on the PC Lan interface with `ip address`
+9. Shutdown the Raspberry Pi
 
-## Festplatte einbinden
-```bash
-sudo apt-get install ntfs-3g
-sudo fdisk -l
-sudo ls -l /dev/disk/by-uuid
-sudo mkdir -p /mnt/usb
-sudo nano /etc/fstab
-```
-Hinzufügen:
+## Configure IPv4 packet forwarding
+1. Connect to the Raspberry Pi
+2. Configure IPv4 packet forwarding in `/etc/sysctl.conf` with `net.ipv4.ip_forward=1`
+3. Shutdown the Raspberry Pi
+
+## Configure the firewall and routing
+1. Connect to the Raspberry Pi
+2. Update the package list via `sudo apt update`
+3. Install `sudo apt install iptables-persistent` then `Y`
+4. During install save the current IPv4 and IPv6 rules each with `Yes`
+5. Configure iptables with the following commands:
 ```text
-UUID=<UUID> /mnt/usb ntfs-3g uid=pi,gid=pi 0 0
+sudo iptables -t nat -A POSTROUTING -o wlan0 -j MASQUERADE
+sudo iptables -t filter -A FORWARD -i wlan0 -o eth0 -m state --state RELATED,ESTABLISHED -j ACCEPT
+sudo iptables -t filter -A FORWARD -i eth0 -o wlan0 -j ACCEPT
 ```
-
-## Funktion: PXE-Server
-> **Quelle: https://www.youtube.com/watch?v=EVtBHgPHf30**
-
-```bash
-sudo apt-get install syslinux-common
-sudo nano /etc/dnsmasq.conf
-```
-Anfügen:
-```text
-dhcp-boot=pxelinux.0,192.168.10.10
-pxe-service=x86PC,"PXE Boot",pxelinux,192.168.10.10
-enable-tftp
-tftp-root=/mnt/usb/pxe
-```
-- Download von `pxelinux.0` über https://www.debian.org/distrib/netinst#netboot
-- Download von `ipxe.lkrn` für ArchLinux über https://www.archlinux.org/releng/netboot/
-- Download von `archlinux.iso` über https://www.archlinux.org/download/
-```bash
-cd /mnt/usb/pxe
-curl -O http://ftp.nl.debian.org/debian/dists/buster/main/installer-amd64/current/images/netboot/pxelinux.0
-sudo cp /usr/lib/syslinux/modules/bios/ldlinux.c32 ./
-sudo cp /usr/lib/syslinux/modules/bios/libutil.c32 ./
-sudo cp /usr/lib/syslinux/modules/bios/menu.c32 ./
-sudo cp /usr/lib/syslinux/memdisk ./
-mkdir -p ./archlinux-installer/bios/
-mkdir -p ./archlinux-installer/iso/
-cd ./archlinux-installer/bios/
-curl -O https://www.archlinux.org/static/netboot/ipxe.419cd003a298.lkrn
-mv ipxe.419cd003a298.lkrn ipxe.lkrn
-cd ../iso
-curl -O https://mirror.netcologne.de/archlinux/iso/2020.05.01/archlinux-2020.05.01-x86_64.iso
-mv archlinux-2020.05.01-x86_64.iso archlinux.iso
-cd ../..
-sudo mkdir -p ./pxelinux.cfg
-sudo nano ./pxelinux.cfg/default
-```
-```text
-DEFAULT menu.c32
-ALLOWOPTIONS 0
-PROMPT 0
-TIMEOUT 0
-MENU TITLE PXE Boot Menu
-LABEL archlinux
-  MENU LABEL ArchLinux (over Internet, iPXE)
-  KERNEL /archlinux-installer/bios/ipxe.lkrn
-LABEL archlinux-iso
-  MENU LABEL ArchLinux (local, ISO)
-  KERNEL /memdisk
-  APPEND iso initrd=/archlinux-installer/iso/archlinux.iso raw
-```
-
-### PXE für Windows
-> **Quelle: https://www.centlinux.com/2018/11/configure-centos-7-pxe-server-install-windows-10.html**
-
-## Funktion: Samba-Share
-> **Quelle: https://raspberrypihq.com/how-to-share-a-folder-with-a-windows-computer-from-a-raspberry-pi/**
-
-```bash
-sudo apt-get install samba samba-common-bin
-sudo nano /etc/samba/smb.conf
-```
-Share einrichten:
-```text
-[pxe]
- comment=PXE-Server Quellen
- path=/mnt/usb/pxe
- browseable=yes
- writeable=yes
- only guest=no
- create mask=0777
- directory mask=0777
- public=yes
-```
+6. Save the iptables configuration with `sudo netfilter-persistent save`
+7. Shutdown the Raspberry Pi
